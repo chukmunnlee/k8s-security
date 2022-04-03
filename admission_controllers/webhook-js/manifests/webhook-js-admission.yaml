@@ -1,0 +1,54 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: webhook-js-admit
+  labels:
+    name: webhook-js-admit
+
+webhooks:
+- name: admit.webhook-js.chuklee.com
+  admissionReviewVersions:
+  - v1beta1
+  - v1
+  rules:
+  - apiGroups: [ "" ]
+    apiVersions: [ "v1" ]
+    resources: [ "pods" ]
+    operations: [ "CREATE", "UPDATE" ]
+    scope: Namespaced 
+  clientConfig:
+    service:
+      name: webhook-js-svc
+      namespace: webhook-js
+      path: /validate
+      port: 8443
+    caBundle: abc123
+  sideEffects: None
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: webhook-js-validate
+  labels:
+    name: webhook-js-validate
+webhooks:
+- name: mutate.webhook-js.chuklee.com
+  admissionReviewVersions:
+  - v1beta1
+  - v1
+  rules:
+  - apiGroups: [ "", "apps" ]
+    apiVersions: [ "v1" ]
+    resources: [ "pods", "deployments", "service" ]
+    operations: [ "CREATE" ]
+    scope: Namespaced
+  clientConfig:
+    service:
+      name: webhook-js-svc
+      namespace: webhook-js
+      path: /mutate
+      port: 8443
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFVENDQWZtZ0F3SUJBZ0lVZllzbUQxRld0UFJVTWxqUDl6Mk1jQXljQ0Zzd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0dERVdNQlFHQTFVRUF3d05kMlZpYUc5dmF5MXFjeTFqWVRBZUZ3MHlNakEwTURNd05EVXpNREphRncweQpNekEwTURNd05EVXpNREphTUJneEZqQVVCZ05WQkFNTURYZGxZbWh2YjJzdGFuTXRZMkV3Z2dFaU1BMEdDU3FHClNJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUURJRTZ3SG1yeVRqeFZLODVQdzhqczM1TGZVRHRKOGVOcGgKTlpxUUdEbUl2YjNma1lSVUJReDRMZWJmUHZUZkdON1dGV2xiMjJoeTUzdktiNDZFZ0VSejVvQ05nTW1weVJ2WAoxSnpDVlJXS0R6OGZvOXkwNXJkVEppQXJEWkViRWZzS3VBa0ZVOG1UTWEzei84TEprcjdzdjIrYjB0V080SktPCmhGTExpNTNkNmFkdTRoVndzaVRoVUpOZ242U0h3K0w2M0d3V0NoaGN1SVQ2VlVKbUxpY2w4STJIUmZmZ2J1WDMKQUhhVEpPSklKVTcwUXNBZm03N2FzZDVvNGpubUxjNmdFRGtNMmNkTUhjT2EvRS9sMFhHdVN0WSt6cHp0UjUxZAo3c1NYM3NmNVZ3eFRWZWlYbUttVms4NzdtR2dueDlITGxzT2ZLREUxZksrUVI5ZUwzVzF2QWdNQkFBR2pVekJSCk1CMEdBMVVkRGdRV0JCUUo1cWpSV0NoTXBhSnpzL2lyemQvRU5FM3lOVEFmQmdOVkhTTUVHREFXZ0JRSjVxalIKV0NoTXBhSnpzL2lyemQvRU5FM3lOVEFQQmdOVkhSTUJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQQpBNElCQVFDdzhPNHR2anhIMzVrWUM2TVpuRzU3N0VYMUNDTE01UWU4UWg3ejV2WGlNWmU0OFptTEZhdXVjTFJ4ClRQS0U3M1lHdHJ0Y3czZXZvY1M5S0JtRmRBRnlMNnlJYzkzNnF6bjRrcE1nRDV3ZzlMTHkrWFllbWlCTWdHdGgKMHlHSWdvcUpSSUtDa0NLazNveUY5ZmNEYUF6Q3NuQ1R0WFlQYS9KTE14Q2huOWp1WVZpVjdCeThvSG0rQ2FHYwpGRnZGemtZdzlqM3VtejNnREhTc0tVcUNFRWNYMTRveXRJRTVjVGY5cUVxbGhEbHVSd3U2aTE0eS84QVhVVkxoClhzK2FvdHNOVlZGcFN0V1VaclFQVkd0R3hGRmM5emU0UEtQN0lERjJRVy91OWFMcUE0R3drNkhISEhiQ3pKSisKSlQ5d3l6WVorazB6NFo0ZnZWbnNQNWp1cG9ZWQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  sideEffects: None

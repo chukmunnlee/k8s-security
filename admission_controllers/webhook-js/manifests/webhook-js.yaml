@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: webhook-js-secret
+  namespace: webhook-js
+type: kubernetes.io/tls
+data:
+  tls.crt: abc123
+  tls.key: abc123
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-js-deploy
+  labels:
+    app: webhook-js-deploy
+  namespace: webhook-js
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-js-deploy
+  template:
+    metadata:
+      labels:
+        app: webhook-js-deploy
+    spec:
+      volumes:
+      - name: certs-vol
+        secret:
+          secretName: webhook-js-secret
+      containers:
+      - name: webhook-js
+        image: chukmunnlee/webhook-js:2.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+        env:
+        - name: PORT
+          value: "8443"
+        volumeMounts:
+        - name: certs-vol
+          mountPath: /certs
+          readOnly: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-js-svc
+  labels:
+    app: webhook-js-deploy
+  namespace: webhook-js
+spec:
+  type: ClusterIP
+  selector:
+    app: webhook-js-deploy
+  ports:
+  - port: 8443
+    protocol: TCP
+    targetPort: 8443
+
