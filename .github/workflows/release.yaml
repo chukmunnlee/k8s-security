@@ -14,4 +14,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: echo date
-      run: echo ">>> ${BRANCH_NAME}: The current date is $(date)"
+      run: echo " ${{ env.BRANCH_NAME }}: The current date is $(date)"
