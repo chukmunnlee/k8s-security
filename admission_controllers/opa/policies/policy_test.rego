@@ -54,6 +54,24 @@ input_request_without_tag := {
 	}
 }
 
+input_request_without_label := {
+	"kind": "AdmissionReview",
+	"request": {
+		"kind": {
+			"kind": "ConfigMap"
+		},
+		"namespace": "policies",
+		"object": {
+			"metadata": {
+				"name": "mycm",
+				"labels": {
+					"name": "mycm"
+				}
+			}
+		}
+	}
+}
+
 test_deny_image_with_latest_tag {
 	deny with input as input_request
 }
@@ -62,3 +80,6 @@ test_deny_image_without_tag {
 	deny with input as input_request_without_tag
 }
 
+test_deny_configmap {
+	deny with input as input_request_without_label
+}
