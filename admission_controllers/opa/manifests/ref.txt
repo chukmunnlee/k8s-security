@@ -1,0 +1,8 @@
+Integrating with Kubernetes
+https://www.openpolicyagent.org/docs/latest/kubernetes-primer/
+https://www.magalix.com/blog/how-to-integrate-opa-into-your-kubernetes-cluster-using-kube-mgmt
+
+Debugging Kubernetes
+https://www.openpolicyagent.org/docs/latest/kubernetes-debugging/
+
+

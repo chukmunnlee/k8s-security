@@ -1,19 +1,5 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: opa-viewer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:serviceaccounts:opa
-
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: configmap-modifier
@@ -26,6 +12,20 @@ rules:
   verbs:
   - update
   - patch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: opa-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:serviceaccounts:opa
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -70,13 +70,16 @@ spec:
         args:
         - run
         - --server
+        - --tls-ca-cert-file=/certs/ca.crt
         - --tls-cert-file=/certs/tls.crt
-        - --tls-private-key=/certs/tls.key
+        - --tls-private-key-file=/certs/tls.key
+        - --authentication=tls
         - --addr=0.0.0.0:8443
-        - --insecure-addr=http://127.0.0.1:8181
+        - --addr=http://127.0.0.1:8181
         - --log-format=json-pretty
         - --set=decision_logs.console=true
         - --set=status.console=true
+        - --log-level=debug
         readinessProbe:
             httpGet:
               path: /health?plugins&bundle
