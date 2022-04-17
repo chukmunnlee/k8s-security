@@ -1,105 +1,25 @@
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
 metadata:
-  name: configmap-modifier
-  namespace: opa-ns
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - update
-  - patch
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: opa-viewer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:serviceaccounts:opa
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: opa-configmap-modifier
-  namespace: opa-ns
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: configmap-modifier
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:serviceaccounts:opa
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
+  name: opa-validwebhookconfig
   labels:
-    app: opa
-  name: opa
-  namespace: opa-ns
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: opa
-  template:
-    metadata:
-      labels:
-        app: opa
-    spec:
-      volumes:
-      - name: opa-vol
-        secret:
-          secretName: opa-secret
-      containers:
-      - name: opa
-        image: openpolicyagent/opa:0.39.0-rootless
-        args:
-        - run
-        - --server
-        - --tls-ca-cert-file=/certs/ca.crt
-        - --tls-cert-file=/certs/tls.crt
-        - --tls-private-key-file=/certs/tls.key
-        - --authentication=tls
-        - --addr=0.0.0.0:8443
-        - --addr=http://127.0.0.1:8181
-        - --log-format=json-pretty
-        - --set=decision_logs.console=true
-        - --set=status.console=true
-        - --log-level=debug
-        readinessProbe:
-            httpGet:
-              path: /health?plugins&bundle
-              scheme: HTTPS
-              port: 8443
-            initialDelaySeconds: 5
-            periodSeconds: 5
-        livenessProbe:
-            httpGet:
-              path: /health
-              scheme: HTTPS
-              port: 8443
-            initialDelaySeconds: 5
-            periodSeconds: 5
-        volumeMounts:
-        - name: opa-vol
-          mountPath: /certs
-          readOnly: true
-      - name: kube-mgmt
-        image: openpolicyagent/kube-mgmt:4.1.0
-        args:
-        - --replicate-cluster=v1/namespaces
-        - --replicate=v1/pods
+    name: opa-validwebhookconfig
+webhooks:
+- name: opa-validwebhookconfig.openpolicyagent.org
+  admissionReviewVersions: [ "v1", "v1beta1" ]
+  sideEffects: None
+  rules:
+  - apiGroups: [ "" ]
+    apiVersions: [ "v1" ]
+    resources: [ "pods", "pod" ]
+    operations: [ "CREATE", "UPDATE" ]
+    scope: Namespaced
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZBekNDQXV1Z0F3SUJBZ0lVWEU2c29FUks0d0ZoUHk2bklWajhGdFdRRkFVd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0VURVBNQTBHQTFVRUF3d0dZMkV0YjNCaE1CNFhEVEl5TURRd05ESXpOVFF5TWxvWERUSXpNRFF3TkRJegpOVFF5TWxvd0VURVBNQTBHQTFVRUF3d0dZMkV0YjNCaE1JSUNJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBZzhBCk1JSUNDZ0tDQWdFQXlXbnNUVXlVS3pnRnlsazIzbWpWVTROWkNiOVVUTDlXSEJlUDFKOXBXbTBVeEtVdW12ZDIKUU11aEh6UzJjQ3dEQ2FTejlmc2ZaNTM4SXMvMlNSeHllOGxMbmxYaXZtTmc2WXZCZm9WSnNHSEJXU1BuM1JIMAp1RmdkR0EyM3o0ZHNtU2lYUmVHRHkvc0k1emwxOUhPb0c5MzBKQWFZbDlrcFFqSVFlMXducTY1TTdDaWQwbW15CnlrOXo4VkJNSmlPaEZLdmVXS1lCZjlPdHF6UUUzakhIL0pTV0JpYUl2TDRMa3VnbGp3SVlHRW9LQXE4dXUwVE8KbDlIQytoTEJ0QldkU3oxYzlBMlVQMW9kSTl5NlpCdmJVSGcwS1UvMWdJZW5wNEwrT0Znei9naWVYcGNXMEpWbApVNENzVnczZ1lmdjdEdEhMN3dLb05sck9tcy92RW1FYklQYmpOQWJSMUZRa3VWS2MzWUxOaGQ0QU5GdDNsdUZMCm9DUUVDdzZvZTI1dXg3ZVFkb1lDdUFlTzVSNjFmcXNRbmVpRUx6SmU3Nk02bURHeEJsNzN0WGlBeFRjaXJ6eFgKdVVxL0xBQzc2bmVGL2h2enNxY3hlMWozVzRvQUFPWVc4ay9rZVREeHdUbWJsT1BOSm1hV3FYWXlMQmV1bjErdwpHV2ZudHppUFNhRzFzUUdrbHZ3QmdtSWlKWkRyRFpENzQ4UjVwcnU4VXo1QXZlVnNyeDVvdU1XMWd6enN0ekVpClZ1elIxZEFUTk00a0tXL09DUE9Ock5hR2xXdWdpOEZPNUpGUks5UWJvcndBVUt2SjkxZ3dOUS9aVWpzK1VZVi8KWnJmRFV0TXFwVkxGTnkydmExR2x5WENzM1dOcjFqMEVWNXJRWmRCNnRHTlNBeFFGYit0Y0F3RUNBd0VBQWFOVApNRkV3SFFZRFZSME9CQllFRkprb3hOUW0vend4Uzl0cGlLK3VER05za0dxOE1COEdBMVVkSXdRWU1CYUFGSmtvCnhOUW0vend4Uzl0cGlLK3VER05za0dxOE1BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUwKQlFBRGdnSUJBSEZVcGVWQ04ySTZpUDZOQXJnRlhrSHRnQ21ESmI1amc3K1l0UmxVR3pvTGtTOUMvalVuUThhOQpQb0p4MUFWby90T0oyR3ZZdmxraXB3bE1CWEJYVTlFeWdOVjh2bElBN0xFbnhPS0kxSzBya1FvT2NQeTh2Nm5HCkVTM0hJb0F2TkhuUGNyQmJuazluNVVpZmxmSE1OT1p0enUxMmZqbFU4Wk5FZnV4Vk1XYUtJRXJzRnNrYVFsRU4KZ3VhU1hZbUFwOXFaVGh4RG1YSkIvT2pzZGxjSmlpbzdhU21XaGNGTmZmT0l4T0lueDZQRkJkYjlpbG1IaXREdgpjWk9BbURmaklaZGx6Mm1GTG9vVFplNWN6emJTWGpIWm1WU013UEUrU2pHQlJkTFpFTlBWTmlVSlVCdXh5NklDCktqZDJqSHhqS3lrY3lhR29WeWVrazR3bGhBNWhsa0FucjVDekxhVVo3dXBCTnNHODZVSnlxdkExNmptTkdiM0IKN0hwTUI2bWljQzZVRXpFSmhpUUlZN2dCZEZOek1xWUgvNE0xT0d2aTJIcVZMeEdVbEZOeDUwZzE3c04wK25QYgpSNXpPV3V1V3A2cWJ5RzNSUWtkVFk5V0ZRajNGN2Voa1VhZTBVeUowTkFUYnJ0QytpajVVcjUzUWRDSHlnUDUyCkRNejFoVlE2ZmZKemxRbGV6cGE5by84S2VUTW5WWUljaWQxbk5qV05aeE13MmM0U295OHl2bHFWc2lIblF3QmgKV0lSK0FyM1l1RHN0cVJycFpDNDAvVXE4Q1pVSkVpWDdzQk5ObHZqWWxmWlRGQVJSMENpQmJrZm9LMWpmS2hEVgp0TUU1cnJnMlEyRCt1Z1A2dkNKUE0vRXdOcUR5akJmOTBZb1RmNnozUkJwK1ptV3g0SzhOCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: opa
+      namespace: opa-ns
+      path: /
+      port: 8443
+
