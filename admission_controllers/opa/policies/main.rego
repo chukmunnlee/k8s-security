@@ -20,7 +20,7 @@ response = {
 	}
 } {
 	reason := concat(", ", admission.deny)
-	"" != reason 
+	"" != trim_space(reason)
 }
 
 else = { 

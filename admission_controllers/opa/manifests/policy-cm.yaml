@@ -36,7 +36,6 @@ data:
     deny[msg] {
       input.request.namespace == "policies"
       input.request.kind.kind == "ConfigMap"
-      #TODO how to check openpolicyagent.org/policy
-      not "rego" == input.request.object.metadata.labels["openpolicyagent.org"]
+      not input.request.object.metadata.labels["openpolicyagent.org/policy"] == "rego"
       msg := "Only OPA configmap policies with openpolicyagent.org/policy=rego label can be deployed to policies namespace"
     }

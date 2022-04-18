@@ -65,7 +65,8 @@ input_request_without_label := {
 			"metadata": {
 				"name": "mycm",
 				"labels": {
-					"name": "mycm"
+					"name": "mycm",
+					"openpolicyagent.org/policy": "abc"
 				}
 			}
 		}
