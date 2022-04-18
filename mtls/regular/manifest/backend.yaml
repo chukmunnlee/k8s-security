@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: msbackend-deploy
+    app: ms
+  name: msbackend-deploy
+  namespace: ms-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: msbackend-pod
+      app: ms
+  template:
+    metadata:
+      labels:
+        name: msbackend-pod
+        app: ms
+    spec:
+      containers:
+      - name: ms-backend
+        image: chukmunnlee/ms-backend:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msbackend-svc
+  labels:
+    app: ms
+    name: msbackend-deploy
+  namespace: ms-ns
+spec:
+  type: ClusterIP
+  selector:
+    app: ms
+    name: msbackend-pod
+  ports:
+  - port: 3000
+    protocol: TCP
+    targetPort: 3000

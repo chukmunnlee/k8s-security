@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msfrontend-cm
+  labels:
+    name: msfrontend-cm
+    app: ms
+  namespace: ms-ns
+data:
+  SERVICE_URL: http://msbackend-svc.ms-ns.svc.cluster.local:3000/fortune
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: msfrontend-deploy
+  labels:
+    name: msfrontend-deploy
+    app: ms
+  namespace: ms-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: msfrontend-pod
+      app: ms
+  template:
+    metadata:
+      labels:
+        name: msfrontend-pod
+        app: ms
+    spec:
+      containers:
+      - name: ms-frontend
+        image: chukmunnlee/ms-frontend:v1
+        imagePullPolicy: Always
+        args:
+        - main
+        - --service
+        - "$(SERVICE_URL)"
+        envFrom:
+          - configMapRef:
+              name: msfrontend-cm
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msfrontend-svc
+  labels:
+    app: ms
+    name: msfrontend-deploy
+  namespace: ms-ns
+spec:
+  type: ClusterIP
+  selector:
+    app: ms
+    name: msfrontend-pod
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080

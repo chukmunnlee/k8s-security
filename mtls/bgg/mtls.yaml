@@ -1,0 +1,28 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: bgg-pa
+  labels:
+    name: bgg-pa
+    app: bgg
+  namespace: bggns
+spec:
+  mtls:
+    mode: STRICT
+
+--- 
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bgg-dr
+  labels:
+    name: bgg-dr
+    app: bgg
+  namespace: bggns
+
+spec:
+  host: bggdb-svc.bggns.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: SIMPLE

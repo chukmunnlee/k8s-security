@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bggapp-secret
+  namespace: bggns
+data:
+  BGG_DB_PASSWORD: Y2hhbmdlaXQ=
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bggapp-cm
+  namespace: bggns
+data:
+  BGG_DB_HOST: bggdb-svc.bggns.svc.cluster.local
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: bggapp-deploy
+    app: bgg
+  name: bggapp-deploy
+  namespace: bggns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: bggapp-pod
+      app: bgg
+  template:
+    metadata:
+      labels:
+        name: bggapp-pod
+        app: bgg
+    spec:
+      containers:
+      - name: bgg-backend
+        image: chukmunnlee/bgg-backend:v3
+        ports:
+        - containerPort: 3000
+        env:
+        - name: BGG_DB_USER
+          value: root
+        envFrom:
+        - configMapRef:
+            name: bggapp-cm
+        - secretRef:
+            name: bggapp-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggapp-svc
+  labels:
+    app: bgg
+    name: bggapp-deploy
+  namespace: bggns
+spec:
+  type: ClusterIP
+  selector:
+    app: bgg
+    name: bggapp-pod
+  ports:
+  - port: 3000
+    protocol: TCP
+    targetPort: 3000
