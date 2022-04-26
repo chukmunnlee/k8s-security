@@ -15,7 +15,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - configmap
   verbs:
   - update
   - patch
