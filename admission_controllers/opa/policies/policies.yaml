@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: main
+  labels:
+    name: main
+    openpolicyagent.org/policy: rego 
+  namespace: policies
+data:
+  main.rego: "package system\n\nimport data.kubernetes.admission\n\ndefault uid =
+    \"\"\n\nuid = input.request.uid\n\nmain = {\n\t\"apiVersion\": \"admission.k8s.io/v1\",\n\t\"kind\":
+    \"AdmissionReview\",\n\t\"response\": response,\n}\n\nresponse = {\n\t\"allowed\":
+    false,\n\t\"uid\": uid,\n\t\"status\": {\n\t\t\"message\": reason,\n\t},\n} {\n\treason
+    := concat(\", \", admission.deny)\n\t\"\" != trim_space(reason)\n}\n\nelse = {\n\t\"allowed\":
+    true,\n\t\"uid\": uid,\n}\n"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: policies
+  labels:
+    openpolicyagent.org/policy: rego
+  namespace: policies
+data:
+  policies.rego: "package kubernetes.admission \n\nimport input.request as req\nimport
+    input.request.object as obj\n\nis_create_update(oper) { { \"CREATE\", \"UPDATE\"
+    }[oper] }\n\ndeny[msg] {\n\n\t\"Pod\" == req.kind.kind\n\n\tis_create_update(req.operation)\n\n\tendswith(obj.spec.containers[_].image,
+    \":latest\")\n\n\tmsg := sprintf(\"Containers in pod %s uses :latest tag\", [
+    obj.metadata.name ])\n}\n\ndeny[msg] {\n\n\t\"Pod\" == req.kind.kind\n\n\tis_create_update(req.operation)\n\n\tcount(split(obj.spec.containers[_].image,
+    \":\")) == 1\n\n\tmsg := sprintf(\"Containers in pod %s implicitly uses latest
+    tag\", [ obj.metadata.name ])\n}\n\ndeny[msg] {\n\n\tis_create_update(req.operation)\n\n\t\"policies\"
+    == obj.metadata.namespace\n\t\"ConfigMap\" != req.kind.kind\n\n\tmsg := sprintf(\"%s
+    is not a Rego policy; only policies can be deployed into polices namespace\",
+    [ obj.metadata.name ])\n}\n\ndeny[msg] {\n\n\tis_create_update(req.operation)\n\n\t\"policies\"
+    == obj.metadata.namespace\n\t\"ConfigMap\" == req.kind.kind\n\tnot obj.metadata.labels[\"openpolicyagent.org/policy\"]\n\n\tmsg
+    := sprintf(\"ConfigMap %s is not a Rego policy\", [ obj.metadata.name ])\n}\n\ndeny[msg]
+    {\n\n\tis_create_update(req.operation)\n\n\t\"policies\" == obj.metadata.namespace\n\t\"ConfigMap\"
+    == req.kind.kind\n\t\"rego\" != obj.metadata.labels[\"openpolicyagent.org/policy\"]\n\n\tmsg
+    := sprintf(\"ConfigMap %s is not a Rego policy\", [ obj.metadata.name ])\n}\n\n"

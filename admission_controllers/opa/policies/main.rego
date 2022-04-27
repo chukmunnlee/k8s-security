@@ -9,21 +9,21 @@ uid = input.request.uid
 main = {
 	"apiVersion": "admission.k8s.io/v1",
 	"kind": "AdmissionReview",
-	"response": response
+	"response": response,
 }
 
 response = {
 	"allowed": false,
 	"uid": uid,
 	"status": {
-		"message": reason
-	}
+		"message": reason,
+	},
 } {
 	reason := concat(", ", admission.deny)
 	"" != trim_space(reason)
 }
 
-else = { 
+else = {
 	"allowed": true,
-	"uid": uid
+	"uid": uid,
 }
